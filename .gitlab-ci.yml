@@ -1,0 +1,25 @@
+image: ubuntu:16.04
+
+stages:
+  - build
+
+before_script:
+  - apt-get -y update
+  - apt-get -y upgrade
+  - apt-get install -y sudo
+  - sudo apt-get -y install nano wget curl apt-transport-https git cmake python-all-dev python2.7 libpython2.7-dev swig zlib1g liblzma5 wget apt-transport-https bison bzip2 gcc g++ autoconf
+  - sudo apt-get -y install software-properties-common
+  - sudo apt-get install -y libftgl-dev libtbb2 libtbb-dev libgl1-mesa-dev libfreetype6-dev mesa-common-dev libffi-dev libfontconfig1-dev
+  - sudo apt-get install -y libpcre3-dev libxml2-dev
+  - sudo add-apt-repository -y ppa:freecad-community/ppa
+  - sudo apt-get update -qq
+  - sudo apt-get install -y freecad
+
+build:
+  stage: build
+  script:
+    - pwd
+    - cd nix
+    - CFLAGS=-O3 CXXFLAGS=-O3 BUILD_CFG=Release python2.7 build-all.py
+  only:
+    - web

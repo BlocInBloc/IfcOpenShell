@@ -24,50 +24,27 @@ addons:
     - python3-all-dev
     - swig
 
-before_script:
-  - if [ $TRAVIS_OS_NAME == "linux" ]; then ccache -z; fi
+install:
+  - sudo apt-get -y update
+  - sudo apt-get -y install nano wget curl apt-transport-https git cmake python-all-dev python2.7 libpython2.7-dev swig zlib1g liblzma5 wget apt-transport-https bison bzip2 gcc g++ autoconf
+  - sudo apt-get -y install software-properties-common
+  - sudo apt-get install -y libftgl-dev libtbb2 libtbb-dev libgl1-mesa-dev libfreetype6-dev mesa-common-dev libffi-dev libfontconfig1-dev
+  - sudo apt-get install -y libpcre3-dev libxml2-dev
+  - sudo add-apt-repository -y ppa:freecad-community/ppa
+  - sudo apt-get update -qq
+  - sudo apt-get install -y freecad
 
 script:
   - pwd
-  - mkdir build && cd build
-  - |
-    cmake \
-    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-    -DOCC_INCLUDE_DIR=/usr/include/opencascade \
-    -DOCC_LIBRARY_DIR=/usr/lib/x86_64-linux-gnu \
-    -DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 \
-    -DPYTHON_INCLUDE_DIR:PATH=/usr/include/python3.8 \
-    -DPYTHON_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libpython3.8.so \
-    -DGLTF_SUPPORT=On \
-    -DJSON_INCLUDE_DIR=/usr/include \
-    ../cmake
+  - cd nix
+  - CFLAGS=-O3 CXXFLAGS=-O3 BUILD_CFG=Release python2.7 build-all.py
+  - zip -r /home/travis/build/Blocovin/IfcOpenShell.zip /home/travis/build/Blocovin/IfcOpenShell/
 
-  # TODO: Drop sudo
-  - sudo make -j $(nproc) install
-    
-  - cd ../test
-  - /usr/bin/python tests.py
-
-  - cd input
-  
-  - /usr/local/bin/IfcConvert -yv acad2010_walls.ifc acad2010_walls.glb
-  # - gltf_validator acad2010_walls.glb
-  
-  - /usr/bin/python -c "from io import open; import ifcopenshell; f = ifcopenshell.open('encoding.ifc'); assert list(map(ord, f[1][0])) == [39, 97, 39, 32, 49, 109, 179, 32, 8804, 32, 53, 109, 179, 32, 8805, 32, 49, 48, 109, 179]"
-  
-  - |
-    (for i in *.ifc; do \
-    echo $i | tee -a log; \
-    timeout 1m /usr/local/bin/IfcConvert -yv "$i" "$i.dae" --validate >> log 2>&1; \
-    echo $i $? >> statuses; \
-    done) || true
-  - echo Failed
-  - grep -v 0$ statuses
-  - grep -v 0$ statuses | wc -l
-  - echo Succeeded
-  - grep 0$ statuses
-  - grep 0$ statuses | wc -l
-
-after_script:
-  - if [ $TRAVIS_OS_NAME == "linux" ]; then ccache -s; fi
+deploy:
+  provider: releases
+  api_key:
+    secure: dnT+2Hr5irPzNIzYVmPHLG0Ig7L0d8BziEuRSrg4LyasQkYIdvTxGKps/QeUfU5Mmyr3h58QhuBA16bUwQaOAfanDC2QCMYNwOY7zcVJfaQFN6SuOc9MYtYzApvJzH0uLN5+1HmssrZ3vZplIjOMmch6yn30CFQ62/euwFItFikIw0g5XNKtVik3qOGEBhaWv/nY1WdrHadOmTrhYyG0ClHGqjcYsHlS4B3JFrSHOcwbOa08PNVt0gDgnoaHmIHWHOoG5r2wKSUFY4IG4EiT/Lb6kEZC1GufP+2Pmz9VrX0vxt7S0W1d+Nv1QUnfIGQSwazqe9605ETeCZtYtCJq4JusvgcPwI4kqC/ZxSLlJJiFGijUIYDMEkjc4CPTxqwfvI0rjcwc/CywjNde6s/zl9k87WycBvUHzppnQoSAdaOjYwM4qRt/ZOuW5rY9F6lwVC9zzUx1swD22OoH5c+e1dCrkSWAb59GSZD4Uste0mEYw7K5Lyr1cWvNhYRRVlS7E4zsv3wDc4haUGQd4SfxzHwBwFCjGv5DuT97IyoLQExGGCybaAJXHskXJ/yo8fZw98LOoDUGc9DJLNX1JOy/cAn6igjNUc2rUl8211YU0fv53vB/fAQRkUzfRJiq//afODHjREv1Ra1zCwcmcnPgK3jMty87HLGytDf5CsHCsj4=
+  file: /home/travis/build/Blocovin/IfcOpenShell.zip
+  on:
+    repo: Blocovin/IfcOpenShell
+    branch: CI

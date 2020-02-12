@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    tags:
+      - build-macos-*
+
+jobs:
+  macos:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install
+      run: |
+        brew install automake
+    - name: Build
+      run: |
+        cd nix
+        CFLAGS=-O3 CXXFLAGS=-O3 BUILD_CFG=Release python2.7 build-all.py
+        cd ..
+        mv build/Darwin/x86_64/10.9/build/ifcopenshell/executables/IfcConvert IfcConvert
+        zip IfcConvert.zip IfcConvert
+    - uses: actions/upload-artifact@v1
+      with:
+        name: IfcConvert
+        path: IfcConvert.zip

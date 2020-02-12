@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    tags:
+      - windows-*
+
+jobs:  
+  windows:
+    runs-on: windows-2019
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: |
+        where git
+        echo $PATH
+        cd nix
+        export CFLAGS="-O3"
+        export CXXFLAGS="-O3"
+        export BUILD_CFG="Release"
+        python2.7 debug.py
+      shell: bash
